@@ -35,7 +35,7 @@
  * TORTIOUS ACTIONS, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-/* $XFree86: xc/programs/Xserver/hw/xfree86/input/hyperpen/xf86HyperPen.c,v 1.10 2003/11/17 22:20:38 dawes Exp $ */
+/* $XFree86: xc/programs/Xserver/hw/xfree86/input/hyperpen/xf86HyperPen.c,v 1.9 2003/09/24 03:16:59 dawes Exp $ */
 
 #include <xf86Version.h>
 

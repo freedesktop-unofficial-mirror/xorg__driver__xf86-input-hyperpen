@@ -309,7 +309,7 @@ static SymTabRec HypPointTabRec[] = {
 #define SS_CONFIG	"a"	/* Send configuration (max coords) */
 #define SS_PROMPT_MODE	"D"	/* Prompt mode */
 #define SS_STREAM_MODE	"@"	/* Stream mode */
-#define SS_RATE         "µ"     /* 19200 bps */
+#define SS_RATE         "\xb5"  /* 19200 bps */
 #define SS_ABSOLUTE     "F"     /* absolute mode */
 #define SS_RELATIVE     "E"     /* relative mode */
 #define SS_MACROKEY	"U"	/* enable F-keys */

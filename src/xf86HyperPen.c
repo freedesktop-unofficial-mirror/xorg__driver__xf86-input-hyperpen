@@ -1712,7 +1712,7 @@ xf86HypInit(InputDriverPtr	drv,
 #ifdef XFree86LOADER
 static
 #endif
-InputDriverRec HYPERPEN = {
+_X_EXPORT InputDriverRec HYPERPEN = {
     1,				/* driver version */
     "hyperpen",			/* driver name */
     NULL,			/* identify */
@@ -1775,9 +1775,11 @@ static XF86ModuleVersionInfo xf86HypVersionRec =
 				/* a tool */
 };
 
-XF86ModuleData hyperpenModuleData = {&xf86HypVersionRec,
-					xf86HypPlug,
-					xf86HypUnplug};
+_X_EXPORT XF86ModuleData hyperpenModuleData = {
+    &xf86HypVersionRec,
+    xf86HypPlug,
+    xf86HypUnplug
+};
 
 #endif /* XFree86LOADER */
 #endif /* XFREE86_V4 */

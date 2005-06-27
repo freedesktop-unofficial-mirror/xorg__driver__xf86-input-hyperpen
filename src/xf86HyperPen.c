@@ -1709,9 +1709,6 @@ xf86HypInit(InputDriverPtr	drv,
     return NULL;
 }
 
-#ifdef XFree86LOADER
-static
-#endif
 _X_EXPORT InputDriverRec HYPERPEN = {
     1,				/* driver version */
     "hyperpen",			/* driver name */

@@ -1242,7 +1242,9 @@ xf86HypProc(DeviceIntPtr pHyp, int what)
 
 	    if (InitValuatorClassDeviceStruct(pHyp,
 		   nbaxes,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
 		   xf86GetMotionEvents,
+#endif
 		   local->history_size,
 		   (priv->flags & ABSOLUTE_FLAG)? Absolute: Relative)
 		   == FALSE) {

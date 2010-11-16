@@ -46,6 +46,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <termios.h>
 
 #include <misc.h>
 #include <xf86.h>
@@ -64,13 +65,6 @@
 #endif
 
 #define wait_for_fd(fd) xf86WaitForInput((fd), 1000)
-#define tcflush(fd, n) xf86FlushInput((fd))
-#undef read
-#define read(a,b,c) xf86ReadSerial((a),(b),(c))
-#undef write
-#define write(a,b,c) xf86WriteSerial((a),(char*)(b),(c))
-#undef close
-#define close(a) xf86CloseSerial((a))
 
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 12
 #error "This driver requires server with ABI 12."

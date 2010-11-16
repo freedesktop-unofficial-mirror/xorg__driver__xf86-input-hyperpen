@@ -199,10 +199,6 @@ static const char * ss_initstr = SS_STREAM_MODE;
 #define LPI2CPM(res) (res * 1000 / 25.4)
 
 /*
-** External declarations
-*/
-
-/*
 ** xf86HypReadInput
 ** Reads from the HyperPen and posts any new events to the server.
 */

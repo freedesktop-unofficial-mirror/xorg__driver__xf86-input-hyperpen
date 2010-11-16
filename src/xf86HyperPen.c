@@ -70,7 +70,7 @@
  * read a full packet before returning
  */
 
-static const char *default_options[] = {
+static char *default_options[] = {
     "BaudRate",    "9600",
     "DataBits",    "8",
     "StopBits",    "1",
@@ -1050,6 +1050,7 @@ _X_EXPORT InputDriverRec HYPERPEN = {
     xf86HypInit,        /* pre-init */
     xf86HypUninit,        /* un-init */
     NULL,            /* module */
+    default_options
 };
 
 

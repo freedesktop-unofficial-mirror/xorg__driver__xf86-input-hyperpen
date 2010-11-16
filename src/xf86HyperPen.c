@@ -165,7 +165,6 @@ static struct MODEL_ID {
 ** Contants and macro
 */
 #define BUFFER_SIZE    256      /* size of reception buffer */
-#define XI_NAME     "HYPERPEN"  /* X device name for the stylus */
 
 #define SYSCALL(call) while(((call) == -1) && (errno == EINTR))
 
@@ -812,8 +811,7 @@ xf86HypAllocate(void)
     char        *dev_name = getenv("HYPERPEN_DEV");
 #endif
 
-    pInfo->name = XI_NAME;
-    pInfo->type_name = "HyperPen Tablet";
+    pInfo->type_name = "STYLUS"
     pInfo->flags = 0; /*XI86_NO_OPEN_ON_INIT;*/
     pInfo->device_control = xf86HypProc;
     pInfo->read_input = xf86HypReadInput;

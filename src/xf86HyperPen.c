@@ -1050,7 +1050,6 @@ _X_EXPORT InputDriverRec HYPERPEN = {
     xf86HypInit,        /* pre-init */
     xf86HypUninit,        /* un-init */
     NULL,            /* module */
-    0                /* ref count */
 };
 
 

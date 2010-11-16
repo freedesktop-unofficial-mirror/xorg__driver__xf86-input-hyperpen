@@ -64,8 +64,6 @@
 #include <xf86Module.h>
 #endif
 
-#define wait_for_fd(fd) xf86WaitForInput((fd), 1000)
-
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 12
 #error "This driver requires server with ABI 12."
 #endif

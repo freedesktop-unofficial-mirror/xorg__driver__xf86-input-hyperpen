@@ -720,7 +720,7 @@ xf86HypProc(DeviceIntPtr pHyp, int what)
         if (InitValuatorClassDeviceStruct(pHyp,
                                           nbaxes,
                                           axis_labels,
-                                          pInfo->history_size,
+                                          GetMotionHistorySize(),
                                           (priv->flags & ABSOLUTE_FLAG)? Absolute: Relative)
             == FALSE) {
             ErrorF("unable to allocate Valuator class device\n");

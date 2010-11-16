@@ -71,9 +71,6 @@
 #define write(a,b,c) xf86WriteSerial((a),(char*)(b),(c))
 #undef close
 #define close(a) xf86CloseSerial((a))
-#define XCONFIG_PROBED "(==)"
-#define XCONFIG_GIVEN "(**)"
-#define xf86Verbose 1
 
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 12
 #error "This driver requires server with ABI 12."
@@ -497,9 +494,8 @@ xf86HypOpen(InputInfoPtr pInfo)
         if (models[i].id == priv->modelid)
             n = i;
 
-    if (xf86Verbose)
-        ErrorF("%s HyperPen Model: 0x%x (%s)\n",
-               XCONFIG_PROBED, priv->modelid, n==-1? "UNKNOWN":models[n].name);
+    xf86Msg(X_PROBED, " HyperPen Model: 0x%x (%s)\n",
+            priv->modelid, n==-1? "UNKNOWN":models[n].name);
 
 
     /* enable F-Keys */
@@ -515,7 +511,7 @@ xf86HypOpen(InputInfoPtr pInfo)
     if (priv->modelid == 0x43) SYSCALL(err = write(pInfo->fd, SS_MACRO_4K, strlen(SS_MACRO_4K))); else SYSCALL(err = write(pInfo->fd, SS_MACRO_56K, strlen(SS_MACRO_56K)));
 
     if (err == -1) {
-        ErrorF("HyperPen write error : %s\n", strerror(errno));
+        xf86Msg(X_ERROR, "HyperPen write error : %s\n", strerror(errno));
         return !Success;
     }
 
@@ -533,9 +529,8 @@ xf86HypOpen(InputInfoPtr pInfo)
     priv->hypMaxY = (buffer[3] & 0x7f) | (buffer[4] << 7);
     priv->hypMaxZ = 512;
 
-    if (xf86Verbose)
-        ErrorF("%s HyperPen max tablet size %d.%02dinx%d.%02din, %dx%d "
-               "lines of resolution\n", XCONFIG_PROBED,
+    xf86Msg(X_PROBED, "HyperPen max tablet size %d.%02dinx%d.%02din, %dx%d "
+               "lines of resolution\n",
                priv->hypMaxX / priv->hypRes,
                (priv->hypMaxX * 100 / priv->hypRes) % 100,
                priv->hypMaxY / priv->hypRes,
@@ -555,8 +550,8 @@ xf86HypOpen(InputInfoPtr pInfo)
             priv->hypXSize *= res100;
             priv->hypYSize *= res100;
         } else {
-            ErrorF("%s HyperPen active area bigger than tablet, "
-                   "assuming maximum\n", XCONFIG_PROBED);
+            xf86Msg(X_PROBED, "HyperPen active area bigger than tablet, "
+                   "assuming maximum\n");
             priv->hypXSize = priv->hypMaxX;
             priv->hypYSize = priv->hypMaxY;
         }
@@ -577,8 +572,8 @@ xf86HypOpen(InputInfoPtr pInfo)
         priv->hypYSize = (double)priv->hypXSize / sratio;
         if (priv->hypYSize > priv->hypMaxY) priv->hypYSize = priv->hypMaxY;
     }
-    ErrorF("%s HyperPen using tablet area %d by %d, at res %d lpi\n",
-           XCONFIG_PROBED, priv->hypXSize, priv->hypYSize, priv->hypRes);
+    xf86Msg(X_PROBED, "HyperPen using tablet area %d by %d, at res %d lpi\n",
+           priv->hypXSize, priv->hypYSize, priv->hypRes);
 
     if (priv->flags & BAUD_19200_FLAG) {
         /* Send 19200 baud to the tablet */

@@ -162,12 +162,6 @@ static struct MODEL_ID {
 };
 
 /*
-** Configuration data
-*/
-#define HYPERPEN_SECTION_NAME "HyperPen"
-
-
-/*
 ** Contants and macro
 */
 #define BUFFER_SIZE    256      /* size of reception buffer */

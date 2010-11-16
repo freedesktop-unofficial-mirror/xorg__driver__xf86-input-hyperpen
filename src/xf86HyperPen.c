@@ -228,7 +228,7 @@ static const char * ss_initstr = SS_STREAM_MODE;
 ** Convert valuators to X and Y.
 */
 static Bool
-xf86HypConvert(LocalDevicePtr    local,
+xf86HypConvert(InputInfoPtr    pInfo,
                int        first,
                int        num,
                int        v0,
@@ -240,7 +240,7 @@ xf86HypConvert(LocalDevicePtr    local,
                int*        x,
                int*        y)
 {
-    HyperPenDevicePtr priv = (HyperPenDevicePtr) local->private;
+    HyperPenDevicePtr priv = (HyperPenDevicePtr) pInfo->private;
 
     if (first != 0 || num == 1)
         return FALSE;
@@ -267,12 +267,12 @@ xf86HypConvert(LocalDevicePtr    local,
 ** Convert X and Y to valuators.
 */
 static Bool
-xf86HypReverseConvert(LocalDevicePtr    local,
+xf86HypReverseConvert(InputInfoPtr    pInfo,
                       int        x,
                       int        y,
                       int        *valuators)
 {
-    HyperPenDevicePtr    priv = (HyperPenDevicePtr) local->private;
+    HyperPenDevicePtr    priv = (HyperPenDevicePtr) pInfo->private;
     valuators[0] = ((x * priv->hypXSize) / screenInfo.screens[0]->width);
     valuators[1] = ((y * priv->hypYSize) / screenInfo.screens[0]->height);
 
@@ -284,9 +284,9 @@ xf86HypReverseConvert(LocalDevicePtr    local,
 ** Reads from the HyperPen and posts any new events to the server.
 */
 static void
-xf86HypReadInput(LocalDevicePtr local)
+xf86HypReadInput(InputInfoPtr pInfo)
 {
-    HyperPenDevicePtr priv = (HyperPenDevicePtr) local->private;
+    HyperPenDevicePtr priv = (HyperPenDevicePtr) pInfo->private;
     int len, loop;
     int is_absolute;
     int f_keys, f_key, tip;
@@ -296,7 +296,7 @@ xf86HypReadInput(LocalDevicePtr local)
     DeviceIntPtr    device;
     unsigned char    buffer[BUFFER_SIZE];
 
-    SYSCALL(len = read(local->fd, buffer, sizeof(buffer)));
+    SYSCALL(len = read(pInfo->fd, buffer, sizeof(buffer)));
 
     if (len <= 0) {
         Error("error reading HyperPen device");
@@ -373,7 +373,7 @@ xf86HypReadInput(LocalDevicePtr local)
 
             DBG(6, ErrorF("hw-press=%d\ttip=%d\tbarrel=%d\tbarrel1=%d\tpush=%d\tpressure=%d\tPT=%d\tbuttons=%d\tf-key=%d\n",hw_pressure, priv->hypData[0] & TIP_BITS, barrel, barrel1, push, pressure, priv->PT, priv->hypData[0] & BUTTON_BITS,f_key));
 
-            device = local->dev;
+            device = pInfo->dev;
 
             /* coordonates are ready we can send events */
 
@@ -505,46 +505,46 @@ xf86HypWriteAndRead(int fd, char *data, char *buffer, int len, int cr_term)
     }
 
 static Bool
-xf86HypOpen(LocalDevicePtr local)
+xf86HypOpen(InputInfoPtr pInfo)
 {
     char        buffer[256];
     int            err, idx;
     int            i, n;
     double        res100;
     double        sratio, tratio;
-    HyperPenDevicePtr    priv = (HyperPenDevicePtr)local->private;
+    HyperPenDevicePtr    priv = (HyperPenDevicePtr)pInfo->private;
 
     DBG(1, ErrorF("opening %s\n", priv->hypDevice));
 
-    local->fd = xf86OpenSerial(local->options);
-    if (local->fd == -1) {
+    pInfo->fd = xf86OpenSerial(pInfo->options);
+    if (pInfo->fd == -1) {
         Error(priv->hypDevice);
         return !Success;
     }
-    DBG(2, ErrorF("%s opened as fd %d\n", priv->hypDevice, local->fd));
+    DBG(2, ErrorF("%s opened as fd %d\n", priv->hypDevice, pInfo->fd));
 
-    if (xf86SetSerialSpeed(local->fd, 9600) < 0)
+    if (xf86SetSerialSpeed(pInfo->fd, 9600) < 0)
         return !Success;
 
     DBG(1, ErrorF("initializing HyperPen tablet\n"));
 
     /* Send reset to the tablet */
 
-    write(local->fd, SS_RESET, strlen(SS_RESET));
+    write(pInfo->fd, SS_RESET, strlen(SS_RESET));
     WAIT(1000);
 
     /* Put it in prompt mode so it doesn't say anything before we're ready */
-    SYSCALL(err = write(local->fd, SS_PROMPT_MODE, strlen(SS_PROMPT_MODE)));
+    SYSCALL(err = write(pInfo->fd, SS_PROMPT_MODE, strlen(SS_PROMPT_MODE)));
     if (err == -1) {
         Error("HyperPen write");
         return !Success;
     }
     /* Clear any pending input */
-    tcflush(local->fd, TCIFLUSH);
+    tcflush(pInfo->fd, TCIFLUSH);
 
     DBG(2, ErrorF("reading model\n"));
 
-    if (!xf86HypWriteAndRead(local->fd, SS_GETID, buffer, 1, 0))
+    if (!xf86HypWriteAndRead(pInfo->fd, SS_GETID, buffer, 1, 0))
         return !Success;
 
     priv->modelid=buffer[0];
@@ -559,7 +559,7 @@ xf86HypOpen(LocalDevicePtr local)
 
 
     /* enable F-Keys */
-    SYSCALL(err = write(local->fd, SS_MACROKEY, strlen(SS_MACROKEY)));
+    SYSCALL(err = write(pInfo->fd, SS_MACROKEY, strlen(SS_MACROKEY)));
     if (err == -1) {
         ErrorF("HyperPen write error : %s\n", strerror(errno));
         return !Success;
@@ -568,7 +568,7 @@ xf86HypOpen(LocalDevicePtr local)
     DBG(6, ErrorF("prepared F-keys\n"));
 
     /* start sequence depends on model ID */
-    if (priv->modelid == 0x43) SYSCALL(err = write(local->fd, SS_MACRO_4K, strlen(SS_MACRO_4K))); else SYSCALL(err = write(local->fd, SS_MACRO_56K, strlen(SS_MACRO_56K)));
+    if (priv->modelid == 0x43) SYSCALL(err = write(pInfo->fd, SS_MACRO_4K, strlen(SS_MACRO_4K))); else SYSCALL(err = write(pInfo->fd, SS_MACRO_56K, strlen(SS_MACRO_56K)));
 
     if (err == -1) {
         ErrorF("HyperPen write error : %s\n", strerror(errno));
@@ -582,7 +582,7 @@ xf86HypOpen(LocalDevicePtr local)
 
     DBG(2, ErrorF("reading max coordinates\n"));
 
-    if (!xf86HypWriteAndRead(local->fd, SS_CONFIG, buffer, 5, 0))
+    if (!xf86HypWriteAndRead(pInfo->fd, SS_CONFIG, buffer, 5, 0))
         return !Success;
 
     priv->hypMaxX = (buffer[1] & 0x7f) | (buffer[2] << 7);
@@ -638,7 +638,7 @@ xf86HypOpen(LocalDevicePtr local)
 
     if (priv->flags & BAUD_19200_FLAG) {
         /* Send 19200 baud to the tablet */
-        SYSCALL(err = write(local->fd, SS_RATE, strlen(SS_RATE)));
+        SYSCALL(err = write(pInfo->fd, SS_RATE, strlen(SS_RATE)));
         if (err == -1) {
             ErrorF("HyperPen write error : %s\n", strerror(errno));
             return !Success;
@@ -650,7 +650,7 @@ xf86HypOpen(LocalDevicePtr local)
         WAIT(10);
 
         /* Set the speed of the serial link to 19200 */
-        if (xf86SetSerialSpeed(local->fd, 19200) < 0) {
+        if (xf86SetSerialSpeed(pInfo->fd, 19200) < 0) {
             return !Success;
         }
 
@@ -664,7 +664,7 @@ xf86HypOpen(LocalDevicePtr local)
 
     buffer[idx] = 0;
 
-    SYSCALL(err = write(local->fd, buffer, idx));
+    SYSCALL(err = write(pInfo->fd, buffer, idx));
 
     if (err == -1) {
         Error("HyperPen write");
@@ -672,7 +672,7 @@ xf86HypOpen(LocalDevicePtr local)
     }
 
     if (err <= 0) {
-        SYSCALL(close(local->fd));
+        SYSCALL(close(pInfo->fd));
         return !Success;
     }
     return Success;
@@ -685,17 +685,17 @@ xf86HypOpen(LocalDevicePtr local)
 static int
 xf86HypOpenDevice(DeviceIntPtr pHyp)
 {
-    LocalDevicePtr    local = (LocalDevicePtr)pHyp->public.devicePrivate;
+    InputInfoPtr    pInfo = (InputInfoPtr)pHyp->public.devicePrivate;
     HyperPenDevicePtr    priv = (HyperPenDevicePtr)PRIVATE(pHyp);
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
     Atom axis_labels[3] = { 0 };
 #endif
 
-    if (xf86HypOpen(local) != Success) {
-        if (local->fd >= 0) {
-            SYSCALL(close(local->fd));
+    if (xf86HypOpen(pInfo) != Success) {
+        if (pInfo->fd >= 0) {
+            SYSCALL(close(pInfo->fd));
         }
-        local->fd = -1;
+        pInfo->fd = -1;
     }
 
     /* Set the real values */
@@ -729,7 +729,7 @@ xf86HypOpenDevice(DeviceIntPtr pHyp)
                            512, /* resolution */
                            0, /* min_res */
                            512); /* max_res */
-    return (local->fd != -1);
+    return (pInfo->fd != -1);
 }
 
 /*
@@ -743,7 +743,7 @@ xf86HypProc(DeviceIntPtr pHyp, int what)
     int            nbaxes;
     int            nbbuttons;
     int            loop;
-    LocalDevicePtr    local = (LocalDevicePtr)pHyp->public.devicePrivate;
+    InputInfoPtr    pInfo = (InputInfoPtr)pHyp->public.devicePrivate;
     HyperPenDevicePtr    priv = (HyperPenDevicePtr)PRIVATE(pHyp);
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
     Atom btn_labels[4] = { 0 };
@@ -793,14 +793,14 @@ xf86HypProc(DeviceIntPtr pHyp, int what)
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
                                           xf86GetMotionEvents,
 #endif
-                                          local->history_size,
+                                          pInfo->history_size,
                                           (priv->flags & ABSOLUTE_FLAG)? Absolute: Relative)
             == FALSE) {
             ErrorF("unable to allocate Valuator class device\n");
             return !Success;
         }
         /* allocate the motion history buffer if needed */
-        xf86MotionHistoryAllocate(local);
+        xf86MotionHistoryAllocate(pInfo);
         /* open the device to gather informations */
         xf86HypOpenDevice(pHyp);
         break;
@@ -808,26 +808,26 @@ xf86HypProc(DeviceIntPtr pHyp, int what)
     case DEVICE_ON:
         DBG(1, ErrorF("xf86HypProc pHyp=%p what=ON\n", (void *)pHyp));
 
-        if ((local->fd < 0) && (!xf86HypOpenDevice(pHyp))) {
+        if ((pInfo->fd < 0) && (!xf86HypOpenDevice(pHyp))) {
             return !Success;
         }
-        xf86AddEnabledDevice(local);
+        xf86AddEnabledDevice(pInfo);
         pHyp->public.on = TRUE;
         break;
 
     case DEVICE_OFF:
         DBG(1, ErrorF("xf86HypProc  pHyp=%p what=%s\n", (void *)pHyp,
                       (what == DEVICE_CLOSE) ? "CLOSE" : "OFF"));
-        if (local->fd >= 0)
-            xf86RemoveEnabledDevice(local);
+        if (pInfo->fd >= 0)
+            xf86RemoveEnabledDevice(pInfo);
         pHyp->public.on = FALSE;
         break;
 
     case DEVICE_CLOSE:
         DBG(1, ErrorF("xf86HypProc  pHyp=%p what=%s\n", (void *)pHyp,
                       (what == DEVICE_CLOSE) ? "CLOSE" : "OFF"));
-        SYSCALL(close(local->fd));
-        local->fd = -1;
+        SYSCALL(close(pInfo->fd));
+        pInfo->fd = -1;
         break;
 
     default:
@@ -845,12 +845,12 @@ xf86HypProc(DeviceIntPtr pHyp, int what)
 ** It...  Uh...  Closes the physical device?
 */
 static void
-xf86HypClose(LocalDevicePtr local)
+xf86HypClose(InputInfoPtr pInfo)
 {
-    if (local->fd >= 0) {
-        SYSCALL(close(local->fd));
+    if (pInfo->fd >= 0) {
+        SYSCALL(close(pInfo->fd));
     }
-    local->fd = -1;
+    pInfo->fd = -1;
 }
 
 /*
@@ -858,7 +858,7 @@ xf86HypClose(LocalDevicePtr local)
 ** When I figure out what it does, it will do it.
 */
 static int
-xf86HypChangeControl(LocalDevicePtr local, xDeviceCtl *control)
+xf86HypChangeControl(InputInfoPtr pInfo, xDeviceCtl *control)
 {
     xDeviceResolutionCtl    *res;
 
@@ -879,8 +879,8 @@ xf86HypChangeControl(LocalDevicePtr local, xDeviceCtl *control)
 static int
 xf86HypSwitchMode(ClientPtr client, DeviceIntPtr dev, int mode)
 {
-    LocalDevicePtr    local = (LocalDevicePtr)dev->public.devicePrivate;
-    HyperPenDevicePtr    priv = (HyperPenDevicePtr)(local->private);
+    InputInfoPtr    pInfo = (InputInfoPtr)dev->public.devicePrivate;
+    HyperPenDevicePtr    priv = (HyperPenDevicePtr)(pInfo->private);
     char        newmode;
 
     DBG(3, ErrorF("xf86HypSwitchMode dev=%p mode=%d\n", (void *)dev, mode));
@@ -901,7 +901,7 @@ xf86HypSwitchMode(ClientPtr client, DeviceIntPtr dev, int mode)
                       (void *)dev, mode));
         return BadMatch;
     }
-    SYSCALL(write(local->fd, &newmode, 1));
+    SYSCALL(write(pInfo->fd, &newmode, 1));
     return Success;
 }
 
@@ -909,31 +909,31 @@ xf86HypSwitchMode(ClientPtr client, DeviceIntPtr dev, int mode)
 ** xf86HypAllocate
 ** Allocates the device structures for the HyperPen.
 */
-static LocalDevicePtr
+static InputInfoPtr
 xf86HypAllocate(void)
 {
-    LocalDevicePtr    local = xf86AllocateInput(hypDrv, 0);
+    InputInfoPtr    pInfo = xf86AllocateInput(hypDrv, 0);
     HyperPenDevicePtr    priv = (HyperPenDevicePtr)xalloc(sizeof(HyperPenDeviceRec));
 #if defined (sun) && !defined(i386)
     char        *dev_name = getenv("HYPERPEN_DEV");
 #endif
 
-    local->name = XI_NAME;
-    local->type_name = "HyperPen Tablet";
-    local->flags = 0; /*XI86_NO_OPEN_ON_INIT;*/
-    local->device_control = xf86HypProc;
-    local->read_input = xf86HypReadInput;
-    local->control_proc = xf86HypChangeControl;
-    local->close_proc = xf86HypClose;
-    local->switch_mode = xf86HypSwitchMode;
-    local->conversion_proc = xf86HypConvert;
-    local->reverse_conversion_proc = xf86HypReverseConvert;
-    local->fd = -1;
-    local->atom = 0;
-    local->dev = NULL;
-    local->private = priv;
-    local->private_flags = 0;
-    local->history_size  = 0;
+    pInfo->name = XI_NAME;
+    pInfo->type_name = "HyperPen Tablet";
+    pInfo->flags = 0; /*XI86_NO_OPEN_ON_INIT;*/
+    pInfo->device_control = xf86HypProc;
+    pInfo->read_input = xf86HypReadInput;
+    pInfo->control_proc = xf86HypChangeControl;
+    pInfo->close_proc = xf86HypClose;
+    pInfo->switch_mode = xf86HypSwitchMode;
+    pInfo->conversion_proc = xf86HypConvert;
+    pInfo->reverse_conversion_proc = xf86HypReverseConvert;
+    pInfo->fd = -1;
+    pInfo->atom = 0;
+    pInfo->dev = NULL;
+    pInfo->private = priv;
+    pInfo->private_flags = 0;
+    pInfo->history_size  = 0;
 
 #if defined(sun) && !defined(i386)
     if (dev_name) {
@@ -961,7 +961,7 @@ xf86HypAllocate(void)
     priv->hypRes = 0;            /* resolution */
     stylus=0;
 
-    return local;
+    return pInfo;
 }
 
 
@@ -972,17 +972,17 @@ xf86HypAllocate(void)
  */
 static void
 xf86HypUninit(InputDriverPtr    drv,
-              LocalDevicePtr    local,
+              InputInfoPtr    pInfo,
               int flags)
 {
-    HyperPenDevicePtr    priv = (HyperPenDevicePtr) local->private;
+    HyperPenDevicePtr    priv = (HyperPenDevicePtr) pInfo->private;
 
     DBG(1, ErrorF("xf86HypUninit\n"));
 
-    xf86HypProc(local->dev, DEVICE_OFF);
+    xf86HypProc(pInfo->dev, DEVICE_OFF);
 
     xfree (priv);
-    xf86DeleteInput(local, 0);
+    xf86DeleteInput(pInfo, 0);
 }
 
 
@@ -996,30 +996,30 @@ xf86HypInit(InputDriverPtr    drv,
             IDevPtr        dev,
             int            flags)
 {
-    LocalDevicePtr    local = NULL;
+    InputInfoPtr    pInfo = NULL;
     HyperPenDevicePtr priv = NULL;
     char        *s;
 
     hypDrv = drv;
 
-    local = xf86HypAllocate();
-    local->conf_idev = dev;
+    pInfo = xf86HypAllocate();
+    pInfo->conf_idev = dev;
 
-    xf86CollectInputOptions(local, default_options, NULL);
-    xf86OptionListReport( local->options );
+    xf86CollectInputOptions(pInfo, default_options, NULL);
+    xf86OptionListReport( pInfo->options );
 
-    if (local)
-        priv = (HyperPenDevicePtr) local->private;
+    if (pInfo)
+        priv = (HyperPenDevicePtr) pInfo->private;
 
-    if (!local || !priv) {
+    if (!pInfo || !priv) {
         goto SetupProc_fail;
     }
 
-    local->name = dev->identifier;
+    pInfo->name = dev->identifier;
     priv->AutoPT = 1;
 
     /* Serial Device is mandatory */
-    priv->hypDevice = xf86FindOptionValue(local->options, "Device");
+    priv->hypDevice = xf86FindOptionValue(pInfo->options, "Device");
 
     if (!priv->hypDevice) {
         xf86Msg (X_ERROR, "%s: No Device specified.\n", dev->identifier);
@@ -1027,19 +1027,19 @@ xf86HypInit(InputDriverPtr    drv,
     }
 
     /* Process the common options. */
-    xf86ProcessCommonOptions(local, local->options);
+    xf86ProcessCommonOptions(pInfo, pInfo->options);
 
     /* Optional configuration */
 
     xf86Msg(X_CONFIG, "%s serial device is %s\n", dev->identifier,
             priv->hypDevice);
 
-    debug_level = xf86SetIntOption(local->options, "DebugLevel", 0);
+    debug_level = xf86SetIntOption(pInfo->options, "DebugLevel", 0);
     if (debug_level > 0) {
         xf86Msg(X_CONFIG, "%s: debug level set to %d\n", dev->identifier, debug_level);
     }
 
-    s = xf86FindOptionValue(local->options, "Mode");
+    s = xf86FindOptionValue(pInfo->options, "Mode");
 
     if (s && (xf86NameCmp(s, "absolute") == 0)) {
         priv->flags = priv->flags | ABSOLUTE_FLAG;
@@ -1049,10 +1049,10 @@ xf86HypInit(InputDriverPtr    drv,
         xf86Msg(X_ERROR, "%s: invalid Mode (should be absolute or relative). "
                 "Using default.\n", dev->identifier);
     }
-    xf86Msg(X_CONFIG, "%s is in %s mode\n", local->name,
+    xf86Msg(X_CONFIG, "%s is in %s mode\n", pInfo->name,
             (priv->flags & ABSOLUTE_FLAG) ? "absolute" : "relative");
 
-    s = xf86FindOptionValue(local->options, "Cursor");
+    s = xf86FindOptionValue(pInfo->options, "Cursor");
 
     if (s && (xf86NameCmp(s, "stylus") == 0)) {
         priv->flags = priv->flags | STYLUS_FLAG;
@@ -1062,22 +1062,22 @@ xf86HypInit(InputDriverPtr    drv,
         xf86Msg(X_ERROR, "%s: invalid Cursor (should be stylus or puck). "
                 "Using default.\n", dev->identifier);
     }
-    xf86Msg(X_CONFIG, "%s is in cursor-mode %s\n", local->name,
+    xf86Msg(X_CONFIG, "%s is in cursor-mode %s\n", pInfo->name,
             (priv->flags & STYLUS_FLAG) ? "cursor" : "puck");
 
-    priv->hypXSize = xf86SetIntOption(local->options, "XSize", 0);
+    priv->hypXSize = xf86SetIntOption(pInfo->options, "XSize", 0);
     if (priv->hypXSize != 0) {
         xf86Msg(X_CONFIG, "%s: XSize = %d\n",
                 dev->identifier, priv->hypXSize);
     }
 
-    priv->hypYSize = xf86SetIntOption(local->options, "YSize", 0);
+    priv->hypYSize = xf86SetIntOption(pInfo->options, "YSize", 0);
     if (priv->hypYSize != 0) {
         xf86Msg(X_CONFIG, "%s: YSize = %d\n",
                 dev->identifier, priv->hypYSize);
     }
 
-    priv->PT = xf86SetIntOption(local->options, "PMin", 0);
+    priv->PT = xf86SetIntOption(pInfo->options, "PMin", 0);
     if (priv->PT > 2) {
         xf86Msg(X_CONFIG, "%s: PMin = %d\n",
                 dev->identifier, priv->PT);
@@ -1086,7 +1086,7 @@ xf86HypInit(InputDriverPtr    drv,
         xf86Msg(X_ERROR, "%s: invalid PMin value (should be > 2)."
                 "Using default.\n", dev->identifier);
 
-    priv->PMax = xf86SetIntOption(local->options, "PMax", 0);
+    priv->PMax = xf86SetIntOption(pInfo->options, "PMax", 0);
     if (priv->PMax > 3) {
         xf86Msg(X_CONFIG, "%s: PMax = %d\n",
                 dev->identifier, priv->PMax);
@@ -1094,31 +1094,31 @@ xf86HypInit(InputDriverPtr    drv,
         xf86Msg(X_ERROR, "%s: invalid PMax value (should be > 3)."
                 "Using default.\n", dev->identifier);
 
-    priv->hypXOffset = xf86SetIntOption(local->options, "XOffset", 0);
+    priv->hypXOffset = xf86SetIntOption(pInfo->options, "XOffset", 0);
     if (priv->hypXOffset != 0) {
         xf86Msg(X_CONFIG, "%s: XOffset = %d\n",
                 dev->identifier, priv->hypXOffset);
     }
 
-    priv->hypYOffset = xf86SetIntOption(local->options, "YOffset", 0);
+    priv->hypYOffset = xf86SetIntOption(pInfo->options, "YOffset", 0);
     if (priv->hypYOffset != 0) {
         xf86Msg(X_CONFIG, "%s: YOffset = %d\n",
                 dev->identifier, priv->hypYOffset);
     }
 
-    if (xf86SetBoolOption(local->options, "InvX", FALSE)) {
+    if (xf86SetBoolOption(pInfo->options, "InvX", FALSE)) {
         priv->flags |= INVX_FLAG;
         xf86Msg(X_CONFIG, "%s: InvX\n", dev->identifier);
     }
 
-    if (xf86SetBoolOption(local->options, "InvY", FALSE)) {
+    if (xf86SetBoolOption(pInfo->options, "InvY", FALSE)) {
         priv->flags |= INVY_FLAG;
         xf86Msg(X_CONFIG, "%s: InvY\n", dev->identifier);
     }
 
     {
         int val;
-        val = xf86SetIntOption(local->options, "BaudRate", 0);
+        val = xf86SetIntOption(pInfo->options, "BaudRate", 0);
         switch (val) {
         case 19200:
             priv->flags |= BAUD_19200_FLAG;
@@ -1133,16 +1133,16 @@ xf86HypInit(InputDriverPtr    drv,
     }
 
     /* mark the device configured */
-    local->flags |= XI86_POINTER_CAPABLE | XI86_CONFIGURED;
+    pInfo->flags |= XI86_POINTER_CAPABLE | XI86_CONFIGURED;
 
-    /* return the LocalDevice */
-    return (local);
+    /* return the pInfoDevice */
+    return (pInfo);
 
  SetupProc_fail:
     if (priv)
         xfree(priv);
-    if (local)
-        xfree(local);
+    if (pInfo)
+        xfree(pInfo);
     return NULL;
 }
 

@@ -59,10 +59,7 @@
 #include <exevents.h>        /* Needed for InitValuator/Proximity stuff */
 #include <X11/keysym.h>
 #include <mipointer.h>
-
-#ifdef XFree86LOADER
 #include <xf86Module.h>
-#endif
 
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 12
 #error "This driver requires server with ABI 12."
@@ -1064,7 +1061,6 @@ _X_EXPORT InputDriverRec HYPERPEN = {
 *
 ***************************************************************************
 */
-#ifdef XFree86LOADER
 /*
  * xf86HypUnplug --
  *
@@ -1114,7 +1110,5 @@ _X_EXPORT XF86ModuleData hyperpenModuleData = {
     xf86HypPlug,
     xf86HypUnplug
 };
-
-#endif /* XFree86LOADER */
 
 /* end of xf86HyperPen.c */

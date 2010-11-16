@@ -81,8 +81,6 @@ static char *default_options[] = {
     NULL
 };
 
-static InputDriverPtr hypDrv;
-
 
 
 /*
@@ -794,6 +792,7 @@ xf86HypSwitchMode(ClientPtr client, DeviceIntPtr dev, int mode)
     return Success;
 }
 
+#if 0
 /*
 ** xf86HypAllocate
 ** Allocates the device structures for the HyperPen.
@@ -802,52 +801,22 @@ static InputInfoPtr
 xf86HypAllocate(void)
 {
     InputInfoPtr    pInfo = xf86AllocateInput(hypDrv, 0);
-    HyperPenDevicePtr    priv = (HyperPenDevicePtr)malloc(sizeof(HyperPenDeviceRec));
 #if defined (sun) && !defined(i386)
     char        *dev_name = getenv("HYPERPEN_DEV");
 #endif
 
     pInfo->type_name = "STYLUS"
     pInfo->flags = 0; /*XI86_NO_OPEN_ON_INIT;*/
-    pInfo->device_control = xf86HypProc;
-    pInfo->read_input = xf86HypReadInput;
-    pInfo->control_proc = xf86HypChangeControl;
-    pInfo->switch_mode = xf86HypSwitchMode;
-    pInfo->fd = -1;
     pInfo->atom = 0;
     pInfo->dev = NULL;
     pInfo->private = priv;
     pInfo->private_flags = 0;
     pInfo->history_size  = 0;
 
-#if defined(sun) && !defined(i386)
-    if (dev_name) {
-        priv->hypDevice = (char *)alloc(strlen(dev_name) + 1);
-        strcpy(priv->hypDevice, dev_name);
-        ErrorF("xf86HypOpen port changed to '%s'\n", priv->hypDevice);
-    } else {
-        priv->hypDevice = "";
-    }
-#else
-    priv->hypDevice = "";        /* device file name */
-#endif
-    priv->hypOldX = -1;          /* previous X position */
-    priv->hypOldY = -1;          /* previous Y position */
-    priv->hypOldProximity = 0;   /* previous proximity */
-    priv->hypOldButtons = 0;     /* previous buttons state */
-    priv->hypMaxX = -1;          /* max X value */
-    priv->hypMaxY = -1;          /* max Y value */
-    priv->hypXSize = -1;         /* active area X */
-    priv->hypXOffset = 0;        /* active area X offset */
-    priv->hypYSize = -1;         /* active area Y */
-    priv->hypYOffset = 0;        /* active area Y offset */
-    priv->flags = ABSOLUTE_FLAG; /* various flags -- default abs format */
-    priv->hypIndex = 0;          /* number of bytes read */
-    priv->hypRes = 0;            /* resolution */
-    stylus=0;
 
     return pInfo;
 }
+#endif
 
 
 /*
@@ -876,52 +845,71 @@ xf86HypUninit(InputDriverPtr    drv,
  *
  * called when the module subsection is found in XF86Config
  */
-static InputInfoPtr
-xf86HypInit(InputDriverPtr    drv,
-            IDevPtr        dev,
-            int            flags)
+static int
+xf86HypInit(InputDriverPtr      drv,
+            InputInfoPtr        pInfo,
+            int                 flags)
 {
-    InputInfoPtr    pInfo = NULL;
-    HyperPenDevicePtr priv = NULL;
-    char        *s;
+    HyperPenDevicePtr priv = malloc(sizeof(HyperPenDeviceRec));
+    char *s;
+    int rc = Success;
 
-    hypDrv = drv;
-
-    pInfo = xf86HypAllocate();
-    pInfo->conf_idev = dev;
-
-    xf86CollectInputOptions(pInfo, default_options, NULL);
-    xf86OptionListReport( pInfo->options );
-
-    if (pInfo)
-        priv = (HyperPenDevicePtr) pInfo->private;
-
-    if (!pInfo || !priv) {
+    if (!priv) {
+        rc = BadAlloc;
         goto SetupProc_fail;
     }
-
-    pInfo->name = dev->identifier;
-    priv->AutoPT = 1;
 
     /* Serial Device is mandatory */
     priv->hypDevice = xf86FindOptionValue(pInfo->options, "Device");
 
     if (!priv->hypDevice) {
-        xf86Msg (X_ERROR, "%s: No Device specified.\n", dev->identifier);
+        xf86Msg (X_ERROR, "%s: No Device specified.\n", pInfo->name);
+        rc = BadMatch;
         goto SetupProc_fail;
     }
 
-    /* Process the common options. */
-    xf86ProcessCommonOptions(pInfo, pInfo->options);
+    pInfo->private = priv;
+    pInfo->device_control = xf86HypProc;
+    pInfo->read_input = xf86HypReadInput;
+    pInfo->control_proc = xf86HypChangeControl;
+    pInfo->switch_mode = xf86HypSwitchMode;
+    pInfo->fd = -1;
+    priv->AutoPT = 1;
+
+#if defined(sun) && !defined(i386)
+    if (dev_name) {
+        priv->hypDevice = (char *)alloc(strlen(dev_name) + 1);
+        strcpy(priv->hypDevice, dev_name);
+        ErrorF("xf86HypOpen port changed to '%s'\n", priv->hypDevice);
+    } else {
+        priv->hypDevice = "";
+    }
+#else
+    priv->hypDevice = "";        /* device file name */
+#endif
+
+    priv->hypOldX = -1;          /* previous X position */
+    priv->hypOldY = -1;          /* previous Y position */
+    priv->hypOldProximity = 0;   /* previous proximity */
+    priv->hypOldButtons = 0;     /* previous buttons state */
+    priv->hypMaxX = -1;          /* max X value */
+    priv->hypMaxY = -1;          /* max Y value */
+    priv->hypXSize = -1;         /* active area X */
+    priv->hypXOffset = 1;        /* active area X offset */
+    priv->hypYSize = -1;         /* active area Y */
+    priv->hypYOffset = 0;        /* active area Y offset */
+    priv->flags = ABSOLUTE_FLAG; /* various flags -- default abs format */
+    priv->hypIndex = 0;          /* number of bytes read */
+    priv->hypRes = 0;            /* resolution */
+    stylus=0;
 
     /* Optional configuration */
-
-    xf86Msg(X_CONFIG, "%s serial device is %s\n", dev->identifier,
+    xf86Msg(X_CONFIG, "%s serial device is %s\n", pInfo->name,
             priv->hypDevice);
 
     debug_level = xf86SetIntOption(pInfo->options, "DebugLevel", 0);
     if (debug_level > 0) {
-        xf86Msg(X_CONFIG, "%s: debug level set to %d\n", dev->identifier, debug_level);
+        xf86Msg(X_CONFIG, "%s: debug level set to %d\n", pInfo->name, debug_level);
     }
 
     s = xf86FindOptionValue(pInfo->options, "Mode");
@@ -932,7 +920,7 @@ xf86HypInit(InputDriverPtr    drv,
         priv->flags = priv->flags & ~ABSOLUTE_FLAG;
     } else if (s) {
         xf86Msg(X_ERROR, "%s: invalid Mode (should be absolute or relative). "
-                "Using default.\n", dev->identifier);
+                "Using default.\n", pInfo->name);
     }
     xf86Msg(X_CONFIG, "%s is in %s mode\n", pInfo->name,
             (priv->flags & ABSOLUTE_FLAG) ? "absolute" : "relative");
@@ -945,7 +933,7 @@ xf86HypInit(InputDriverPtr    drv,
         priv->flags = priv->flags & ~STYLUS_FLAG;
     } else if (s) {
         xf86Msg(X_ERROR, "%s: invalid Cursor (should be stylus or puck). "
-                "Using default.\n", dev->identifier);
+                "Using default.\n", pInfo->name);
     }
     xf86Msg(X_CONFIG, "%s is in cursor-mode %s\n", pInfo->name,
             (priv->flags & STYLUS_FLAG) ? "cursor" : "puck");
@@ -953,52 +941,52 @@ xf86HypInit(InputDriverPtr    drv,
     priv->hypXSize = xf86SetIntOption(pInfo->options, "XSize", 0);
     if (priv->hypXSize != 0) {
         xf86Msg(X_CONFIG, "%s: XSize = %d\n",
-                dev->identifier, priv->hypXSize);
+                pInfo->name, priv->hypXSize);
     }
 
     priv->hypYSize = xf86SetIntOption(pInfo->options, "YSize", 0);
     if (priv->hypYSize != 0) {
         xf86Msg(X_CONFIG, "%s: YSize = %d\n",
-                dev->identifier, priv->hypYSize);
+                pInfo->name, priv->hypYSize);
     }
 
     priv->PT = xf86SetIntOption(pInfo->options, "PMin", 0);
     if (priv->PT > 2) {
         xf86Msg(X_CONFIG, "%s: PMin = %d\n",
-                dev->identifier, priv->PT);
+                pInfo->name, priv->PT);
         priv->AutoPT = 0;
     } else
         xf86Msg(X_ERROR, "%s: invalid PMin value (should be > 2)."
-                "Using default.\n", dev->identifier);
+                "Using default.\n", pInfo->name);
 
     priv->PMax = xf86SetIntOption(pInfo->options, "PMax", 0);
     if (priv->PMax > 3) {
         xf86Msg(X_CONFIG, "%s: PMax = %d\n",
-                dev->identifier, priv->PMax);
+                pInfo->name, priv->PMax);
     } else
         xf86Msg(X_ERROR, "%s: invalid PMax value (should be > 3)."
-                "Using default.\n", dev->identifier);
+                "Using default.\n", pInfo->name);
 
     priv->hypXOffset = xf86SetIntOption(pInfo->options, "XOffset", 0);
     if (priv->hypXOffset != 0) {
         xf86Msg(X_CONFIG, "%s: XOffset = %d\n",
-                dev->identifier, priv->hypXOffset);
+                pInfo->name, priv->hypXOffset);
     }
 
     priv->hypYOffset = xf86SetIntOption(pInfo->options, "YOffset", 0);
     if (priv->hypYOffset != 0) {
         xf86Msg(X_CONFIG, "%s: YOffset = %d\n",
-                dev->identifier, priv->hypYOffset);
+                pInfo->name, priv->hypYOffset);
     }
 
     if (xf86SetBoolOption(pInfo->options, "InvX", FALSE)) {
         priv->flags |= INVX_FLAG;
-        xf86Msg(X_CONFIG, "%s: InvX\n", dev->identifier);
+        xf86Msg(X_CONFIG, "%s: InvX\n", pInfo->name);
     }
 
     if (xf86SetBoolOption(pInfo->options, "InvY", FALSE)) {
         priv->flags |= INVY_FLAG;
-        xf86Msg(X_CONFIG, "%s: InvY\n", dev->identifier);
+        xf86Msg(X_CONFIG, "%s: InvY\n", pInfo->name);
     }
 
     {
@@ -1012,23 +1000,19 @@ xf86HypInit(InputDriverPtr    drv,
             priv->flags &= ~BAUD_19200_FLAG;
             break;
         default:
-            xf86Msg(X_CONFIG, "%s: Illegal speed value (must be 9600 or 19200)\n", dev->identifier);
+            xf86Msg(X_CONFIG, "%s: Illegal speed value (must be 9600 or 19200)\n", pInfo->name);
             break;
         }
     }
 
-    /* mark the device configured */
-    pInfo->flags |= XI86_POINTER_CAPABLE | XI86_CONFIGURED;
-
-    /* return the pInfoDevice */
-    return (pInfo);
+    return rc;
 
  SetupProc_fail:
     if (priv)
         free(priv);
     if (pInfo)
         free(pInfo);
-    return NULL;
+    return rc;
 }
 
 _X_EXPORT InputDriverRec HYPERPEN = {

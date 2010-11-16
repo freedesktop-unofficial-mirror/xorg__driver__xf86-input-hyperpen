@@ -648,7 +648,8 @@ xf86HypOpenDevice(DeviceIntPtr pHyp)
                            priv->hypXSize, /* max val */
                            LPI2CPM(priv->hypRes), /* resolution */
                            0, /* min_res */
-                           LPI2CPM(priv->hypRes)); /* max_res */
+                           LPI2CPM(priv->hypRes), /* max_res */
+                           (priv->flags & ABSOLUTE_FLAG)? Absolute : Relative);
     InitValuatorAxisStruct(pHyp,
                            1,
                            axis_labels[1],
@@ -656,7 +657,8 @@ xf86HypOpenDevice(DeviceIntPtr pHyp)
                            priv->hypYSize, /* max val */
                            LPI2CPM(priv->hypRes), /* resolution */
                            0, /* min_res */
-                           LPI2CPM(priv->hypRes)); /* max_res */
+                           LPI2CPM(priv->hypRes), /* max_res */
+                           (priv->flags & ABSOLUTE_FLAG)? Absolute : Relative);
     InitValuatorAxisStruct(pHyp,
                            2,
                            axis_labels[2],
@@ -664,7 +666,8 @@ xf86HypOpenDevice(DeviceIntPtr pHyp)
                            511, /* max val */
                            512, /* resolution */
                            0, /* min_res */
-                           512); /* max_res */
+                           512,  /* max_res */
+                           (priv->flags & ABSOLUTE_FLAG)? Absolute : Relative);
     return (pInfo->fd != -1);
 }
 

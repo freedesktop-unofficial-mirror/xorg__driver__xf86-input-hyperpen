@@ -75,6 +75,10 @@
 #define XCONFIG_GIVEN "(**)"
 #define xf86Verbose 1
 
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 12
+#error "This driver requires server with ABI 12."
+#endif
+
 /*
  * Be sure to set vmin appropriately for your device's protocol. You want to
  * read a full packet before returning

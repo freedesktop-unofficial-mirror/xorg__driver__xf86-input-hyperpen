@@ -223,63 +223,6 @@ static const char * ss_initstr = SS_STREAM_MODE;
 ** External declarations
 */
 
-
-/*
-** xf86HypConvert
-** Convert valuators to X and Y.
-*/
-static Bool
-xf86HypConvert(InputInfoPtr    pInfo,
-               int        first,
-               int        num,
-               int        v0,
-               int        v1,
-               int        v2,
-               int        v3,
-               int        v4,
-               int        v5,
-               int*        x,
-               int*        y)
-{
-    HyperPenDevicePtr priv = (HyperPenDevicePtr) pInfo->private;
-
-    if (first != 0 || num == 1)
-        return FALSE;
-    *x = (v0 * screenInfo.screens[0]->width) / priv->hypXSize;
-    *y = (v1 * screenInfo.screens[0]->height) / priv->hypYSize;
-    if (priv->flags & INVX_FLAG)
-        *x = screenInfo.screens[0]->width - *x;
-    if (*x < 0)
-        *x = 0;
-    if (priv->flags & INVY_FLAG)
-        *y = screenInfo.screens[0]->height - *y;
-    if (*y < 0)
-        *y = 0;
-    if (*x > screenInfo.screens[0]->width)
-        *x = screenInfo.screens[0]->width;
-    if (*y > screenInfo.screens[0]->height)
-        *y = screenInfo.screens[0]->height;
-
-    return TRUE;
-}
-
-/*
-** xf86HypReverseConvert
-** Convert X and Y to valuators.
-*/
-static Bool
-xf86HypReverseConvert(InputInfoPtr    pInfo,
-                      int        x,
-                      int        y,
-                      int        *valuators)
-{
-    HyperPenDevicePtr    priv = (HyperPenDevicePtr) pInfo->private;
-    valuators[0] = ((x * priv->hypXSize) / screenInfo.screens[0]->width);
-    valuators[1] = ((y * priv->hypYSize) / screenInfo.screens[0]->height);
-
-    return TRUE;
-}
-
 /*
 ** xf86HypReadInput
 ** Reads from the HyperPen and posts any new events to the server.
@@ -823,20 +766,6 @@ xf86HypProc(DeviceIntPtr pHyp, int what)
                   what, (void *)pHyp, (void *)priv));
     return Success;
 }
-
-/*
-** xf86HypClose
-** It...  Uh...  Closes the physical device?
-*/
-static void
-xf86HypClose(InputInfoPtr pInfo)
-{
-    if (pInfo->fd >= 0) {
-        SYSCALL(close(pInfo->fd));
-    }
-    pInfo->fd = -1;
-}
-
 /*
 ** xf86HypChangeControl
 ** When I figure out what it does, it will do it.
@@ -908,10 +837,7 @@ xf86HypAllocate(void)
     pInfo->device_control = xf86HypProc;
     pInfo->read_input = xf86HypReadInput;
     pInfo->control_proc = xf86HypChangeControl;
-    pInfo->close_proc = xf86HypClose;
     pInfo->switch_mode = xf86HypSwitchMode;
-    pInfo->conversion_proc = xf86HypConvert;
-    pInfo->reverse_conversion_proc = xf86HypReverseConvert;
     pInfo->fd = -1;
     pInfo->atom = 0;
     pInfo->dev = NULL;

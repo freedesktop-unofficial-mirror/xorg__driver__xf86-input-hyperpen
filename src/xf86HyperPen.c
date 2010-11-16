@@ -913,7 +913,7 @@ static InputInfoPtr
 xf86HypAllocate(void)
 {
     InputInfoPtr    pInfo = xf86AllocateInput(hypDrv, 0);
-    HyperPenDevicePtr    priv = (HyperPenDevicePtr)xalloc(sizeof(HyperPenDeviceRec));
+    HyperPenDevicePtr    priv = (HyperPenDevicePtr)malloc(sizeof(HyperPenDeviceRec));
 #if defined (sun) && !defined(i386)
     char        *dev_name = getenv("HYPERPEN_DEV");
 #endif
@@ -937,7 +937,7 @@ xf86HypAllocate(void)
 
 #if defined(sun) && !defined(i386)
     if (dev_name) {
-        priv->hypDevice = (char *)xalloc(strlen(dev_name) + 1);
+        priv->hypDevice = (char *)alloc(strlen(dev_name) + 1);
         strcpy(priv->hypDevice, dev_name);
         ErrorF("xf86HypOpen port changed to '%s'\n", priv->hypDevice);
     } else {
@@ -981,7 +981,7 @@ xf86HypUninit(InputDriverPtr    drv,
 
     xf86HypProc(pInfo->dev, DEVICE_OFF);
 
-    xfree (priv);
+    free (priv);
     xf86DeleteInput(pInfo, 0);
 }
 
@@ -1140,9 +1140,9 @@ xf86HypInit(InputDriverPtr    drv,
 
  SetupProc_fail:
     if (priv)
-        xfree(priv);
+        free(priv);
     if (pInfo)
-        xfree(pInfo);
+        free(pInfo);
     return NULL;
 }
 

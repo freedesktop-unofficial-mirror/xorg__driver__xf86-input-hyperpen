@@ -74,8 +74,6 @@
 #define XCONFIG_PROBED "(==)"
 #define XCONFIG_GIVEN "(**)"
 #define xf86Verbose 1
-#undef PRIVATE
-#define PRIVATE(x) XI_PRIVATE(x)
 
 /*
  * Be sure to set vmin appropriately for your device's protocol. You want to
@@ -685,7 +683,7 @@ static int
 xf86HypOpenDevice(DeviceIntPtr pHyp)
 {
     InputInfoPtr    pInfo = (InputInfoPtr)pHyp->public.devicePrivate;
-    HyperPenDevicePtr    priv = (HyperPenDevicePtr)PRIVATE(pHyp);
+    HyperPenDevicePtr priv = (HyperPenDevicePtr)(pInfo->private);
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
     Atom axis_labels[3] = { 0 };
 #endif
@@ -743,7 +741,7 @@ xf86HypProc(DeviceIntPtr pHyp, int what)
     int            nbbuttons;
     int            loop;
     InputInfoPtr    pInfo = (InputInfoPtr)pHyp->public.devicePrivate;
-    HyperPenDevicePtr    priv = (HyperPenDevicePtr)PRIVATE(pHyp);
+    HyperPenDevicePtr priv = (HyperPenDevicePtr)(pInfo->private);
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
     Atom btn_labels[4] = { 0 };
     Atom axis_labels[3] = { 0 };

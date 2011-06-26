@@ -834,6 +834,7 @@ xf86HypUninit(InputDriverPtr    drv,
     DBG(1, ErrorF("xf86HypUninit\n"));
 
     free (priv);
+    pInfo->private = NULL;
     xf86DeleteInput(pInfo, 0);
 }
 

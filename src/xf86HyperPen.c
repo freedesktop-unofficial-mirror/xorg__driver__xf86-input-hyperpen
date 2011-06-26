@@ -833,8 +833,6 @@ xf86HypUninit(InputDriverPtr    drv,
 
     DBG(1, ErrorF("xf86HypUninit\n"));
 
-    xf86HypProc(pInfo->dev, DEVICE_OFF);
-
     free (priv);
     xf86DeleteInput(pInfo, 0);
 }

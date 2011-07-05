@@ -868,6 +868,7 @@ xf86HypInit(InputDriverPtr      drv,
     pInfo->read_input = xf86HypReadInput;
     pInfo->control_proc = xf86HypChangeControl;
     pInfo->switch_mode = xf86HypSwitchMode;
+    pInfo->type_name = "STYLUS";
     pInfo->fd = -1;
     priv->AutoPT = 1;
 

@@ -788,33 +788,6 @@ xf86HypSwitchMode(ClientPtr client, DeviceIntPtr dev, int mode)
     return Success;
 }
 
-#if 0
-/*
-** xf86HypAllocate
-** Allocates the device structures for the HyperPen.
-*/
-static InputInfoPtr
-xf86HypAllocate(void)
-{
-    InputInfoPtr    pInfo = xf86AllocateInput(hypDrv, 0);
-#if defined (sun) && !defined(i386)
-    char        *dev_name = getenv("HYPERPEN_DEV");
-#endif
-
-    pInfo->type_name = "STYLUS"
-    pInfo->flags = 0; /*XI86_NO_OPEN_ON_INIT;*/
-    pInfo->atom = 0;
-    pInfo->dev = NULL;
-    pInfo->private = priv;
-    pInfo->private_flags = 0;
-    pInfo->history_size  = 0;
-
-
-    return pInfo;
-}
-#endif
-
-
 /*
  * xf86HypUninit --
  *

@@ -729,8 +729,7 @@ xf86HypProc(DeviceIntPtr pHyp, int what)
 
     default:
         ErrorF("unsupported mode=%d\n", what);
-        return !Success;
-        break;
+	return BadValue;
     }
     DBG(2, ErrorF("END   xf86HypProc Success what=%d dev=%p priv=%p\n",
                   what, (void *)pHyp, (void *)priv));

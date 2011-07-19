@@ -973,14 +973,9 @@ xf86HypInit(InputDriverPtr      drv,
         }
     }
 
+ SetupProc_fail:
     return rc;
 
- SetupProc_fail:
-    if (priv)
-        free(priv);
-    if (pInfo)
-        free(pInfo);
-    return rc;
 }
 
 _X_EXPORT InputDriverRec HYPERPEN = {

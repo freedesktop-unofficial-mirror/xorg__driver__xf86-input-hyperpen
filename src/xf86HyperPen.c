@@ -833,6 +833,14 @@ xf86HypInit(InputDriverPtr      drv,
         xf86Msg (X_ERROR, "%s: No Device specified.\n", pInfo->name);
         rc = BadMatch;
         goto SetupProc_fail;
+    } else {
+        pInfo->fd = xf86OpenSerial(pInfo->options);
+        if (pInfo->fd == -1) {
+            xf86Msg (X_ERROR, "%s: cannot open device '%s'\n", pInfo->name, priv->hypDevice);
+            return BadValue;
+        }
+        xf86CloseSerial(pInfo->fd);
+        pInfo->fd = -1;
     }
 
     pInfo->private = priv;

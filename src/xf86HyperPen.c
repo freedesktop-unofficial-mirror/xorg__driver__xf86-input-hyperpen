@@ -827,7 +827,7 @@ xf86HypInit(InputDriverPtr      drv,
     }
 
     /* Serial Device is mandatory */
-    priv->hypDevice = xf86FindOptionValue(pInfo->options, "Device");
+    priv->hypDevice = xf86SetStrOption(pInfo->options, "Device", NULL);
 
     if (!priv->hypDevice) {
         xf86Msg (X_ERROR, "%s: No Device specified.\n", pInfo->name);
